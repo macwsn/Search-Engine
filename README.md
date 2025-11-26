@@ -55,7 +55,6 @@ An asynchronous Python script was also developed to fetch random articles via th
 DATABASE_NAME = "wikipedia_fast.db"
 WIKIPEDIA_API_URL = "https://en.wikipedia.org/w/api.php"
 TARGET_ARTICLE_COUNT = 300000
-# ... (Full API fetching logic located in src/fetcher.py)
 ```
 
 ### Data Cleaning
@@ -94,28 +93,9 @@ We analyzed the search performance based on **Search Time (T)**, **Match Score (
 *   **Rare Phrases:** Generally lower scores; search time is highly dependent on phrase length.
 *   **Average Query Time:** 0.20s - 0.25s.
 
-### Visualization: Search Time vs. Score vs. Length
-*(Generated using Matplotlib)*
-
-![Search Analysis Visualization](data3.png)
-
 ### Impact of IDF (Inverse Document Frequency)
 We compared search results with and without IDF weighting.
 *   **Observation:** For short queries, the difference is negligible. However, as the query length increases, the results diverge significantly, proving IDF's necessity for complex queries.
-
-![IDF Comparison Chart](data1.png)
-
-**Code for IDF Analysis:**
-```python
-import matplotlib.pyplot as plt
-
-# Normalized comparison data
-# ... (Data arrays from notebook) ...
-
-plt.figure(figsize=(12, 5))
-plt.subplot(1, 2, 1); plt.title('Without IDF'); plt.plot(x, bez_idf_values[i])
-plt.subplot(1, 2, 2); plt.title('With IDF'); plt.plot(x, z_idf_values[i])
-plt.show()
 ```
 
 ---
@@ -143,34 +123,6 @@ This approach utilized **Singular Value Decomposition (SVD)** to identify semant
 
 *   **API:** Implemented using **actix-web** (Rust).
 *   **Frontend:** Built with **React** and **Vite**.
-
-### Directory Structure
-*   `/src` - Rust source code (Tokenizer, SVD, TF-IDF).
-*   `/analysis` - Python Jupyter notebooks and Matplotlib scripts.
-*   `/frontend` - React application.
-*   `/data` - SQL dump and stop words list.
-
-## 6. How to Run
-
-### Prerequisites
-*   Rust (Cargo)
-*   Python 3.10+
-*   Node.js (for Frontend)
-
-### Steps
-1.  **Prepare Data:**
-    ```bash
-    python scripts/populate_db.py
-    ```
-2.  **Run Backend:**
-    ```bash
-    cargo run --release
-    ```
-3.  **Run Frontend:**
-    ```bash
-    cd frontend && npm install && npm run dev
-    ```
-
 ---
 
 ## 7. Conclusion
