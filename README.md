@@ -110,10 +110,6 @@ This approach utilized **Singular Value Decomposition (SVD)** to identify semant
 *   **Computation Time:** Calculating SVD for Rank $k=350$ with 1000 iterations took approximately **3 days**.
 *   **Accuracy Issues:** The results for $k=350$ showed significant noise (see image below), likely due to approximation errors in the custom Lanczos implementation or numerical precision limits.
 *   **Optimization:** To keep search times reasonable, we limited the rank to $k \ge 100$.
-
-![SVD Results Analysis](data2.png)
-*The visual noise in the matrix above indicates issues with the approximation algorithm for this specific dataset.*
-
 ---
 
 ## 5. Frontend & API
