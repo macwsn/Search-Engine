@@ -96,9 +96,6 @@ We analyzed the search performance based on **Search Time (T)**, **Match Score (
 ### Impact of IDF (Inverse Document Frequency)
 We compared search results with and without IDF weighting.
 *   **Observation:** For short queries, the difference is negligible. However, as the query length increases, the results diverge significantly, proving IDF's necessity for complex queries.
-```
-
----
 
 ## 4. Approach 2: Latent Semantic Indexing (SVD)
 
