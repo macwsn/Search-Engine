@@ -118,6 +118,6 @@ This approach utilized **Singular Value Decomposition (SVD)** to identify semant
 *   **Frontend:** Built with **React** and **Vite**.
 ---
 
-## 7. Conclusion
+## 6. Conclusion
 
 The **Vector Space Model (TF-IDF)** provided the best balance of performance and accuracy for this specific dataset, with query times under 250ms. The **SVD** approach, while theoretically powerful for capturing semantic meaning, proved difficult to implement efficiently in Rust without external linear algebra bindings (like LAPACK), leading to high computational costs and stability issues.
