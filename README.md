@@ -1,22 +1,42 @@
 # Wikipedia Search Engine: Vector Space Model vs. LSI (SVD)
 
-This project implements a high-performance search engine based on the Simple English Wikipedia dataset. The core indexing and search logic are engineered in **Rust** for efficiency, utilizing **SQLite** for data storage. The system is wrapped with a **Python** layer for data analysis and prototyping, and a **React** frontend for user interaction.
+A high-performance search engine built on the Simple English Wikipedia dataset, comparing two search algorithms: Vector Space Model (TF-IDF) and Latent Semantic Indexing (SVD).
 
-## 1. Dataset and Storage Strategy
+## Technology Stack
 
-### Technology Choice: SQLite
-SQLite was selected for data storage due to:
-1.  **Compatibility:** Seamless integration with Rust (backend) and React (frontend).
-2.  **Implementation:** Simple setup with no separate server process required.
-3.  **Performance:** Fast, low-cost access to data for offline/local deployments.
-   *Note: For a high-traffic server environment with massive concurrent queries, MongoDB might be preferred, but SQL fits the offline/embedded nature of this project best.*
+- **Backend:** Rust with Actix-web API
+- **Database:** SQLite
+- **Frontend:** React with Vite
+- **Data Processing:** Python
 
-### Data Source & Processing
-*   **Source:** [Wikimedia Dumps (Simple English)](https://dumps.wikimedia.org/enwiki/latest/)
-*   **Parser:** [WikiExtractor](https://github.com/attardi/wikiextractor) (modified version).
-*   **Pipeline:** XML Dump $\to$ TXT Files $\to$ SQLite Database.
+## Overview
 
-**Python Script for Database Population:**
+This project explores two fundamental approaches for document indexing and retrieval:
+1. **Vector Space Model (TF-IDF)** - Fast, reliable, production-ready
+2. **Latent Semantic Indexing (SVD)** - Semantically aware but computationally intensive
+
+![Search Engine Interface](screen.png)
+
+## Dataset and Storage Strategy
+
+### SQLite Database
+
+SQLite was selected for this project because of:
+- **Compatibility:** Works seamlessly with Rust backend and React frontend
+- **Simplicity:** No separate server process required  
+- **Performance:** Fast local data access suitable for offline deployments
+
+
+### Data Pipeline
+
+**Source:** [Wikimedia Dumps (Simple English)](https://dumps.wikimedia.org/enwiki/latest/)
+
+**Processing:**
+- XML Dump → TXT Files → SQLite Database
+- Parser: [WikiExtractor](https://github.com/attardi/wikiextractor) (modified version)
+
+**Database Population:**
+
 ```python
 import sqlite3
 import re
@@ -48,19 +68,17 @@ def create_db_and_insert_data(docs):
     conn.close()
 ```
 
-### Alternative: Wikipedia API Fetcher
-An asynchronous Python script was also developed to fetch random articles via the API, though this method proved slower than parsing the dump.
+### Alternative Approach: Wikipedia API
 
-```python
-DATABASE_NAME = "wikipedia_fast.db"
-WIKIPEDIA_API_URL = "https://en.wikipedia.org/w/api.php"
-TARGET_ARTICLE_COUNT = 300000
-```
+An asynchronous Python script for fetching random articles was also explored, but proved slower than parsing the dump directly.
 
 ### Data Cleaning
-Initial ingestion resulted in ~370,000 documents. However, anomalies were detected during SVD calculation due to extremely short descriptions.
-*   **Action:** Removed articles shorter than 150 characters.
-*   **Final Document Count:** 223,412.
+
+Initial ingestion resulted in ~370,000 documents. During SVD calculation, anomalies from extremely short descriptions were detected.
+
+**Action taken:** Removed articles shorter than 150 characters
+
+**Final document count:** 223,412
 
 ```sql
 DELETE FROM articles WHERE length(text) < 150;
@@ -68,56 +86,69 @@ DELETE FROM articles WHERE length(text) < 150;
 
 ---
 
-## 2. Core Implementation (Rust)
+## Core Implementation (Rust)
 
-The search engine logic is built in Rust for memory safety and speed.
 
-### A. Text Normalization
-1.  **Stop Words:** Removal of common non-informative words (e.g., "the", "is", "at").
-2.  **Porter Stemming Algorithm:** Implemented to reduce words to their root forms (removing morphological endings).
+The search engine logic is implemented in Rust for memory safety and performance.
 
-### B. Search Algorithm: Vector Space Model (TF-IDF)
-The system builds a **Term-Document Matrix** using a sparse data structure.
-*   **TF (Term Frequency):** How often a word appears in a specific document.
-*   **IDF (Inverse Document Frequency):** Weighting mechanism to reduce the importance of common words across the entire corpus.
-*   **Similarity Metric:** Cosine Similarity.
+### Text Normalization
+
+- **Stop Words:** Removal of common non-informative words (the, is, at, etc.)
+- **Porter Stemming Algorithm:** Reduces words to their root forms by removing morphological endings
+
+### Search Algorithm: Vector Space Model (TF-IDF)
+
+The system builds a Term-Document Matrix using a sparse data structure with three key components:
+
+- **TF (Term Frequency):** How often a word appears in a document
+- **IDF (Inverse Document Frequency):** Weights to reduce the importance of common words across the corpus
+- **Similarity Metric:** Cosine Similarity
 
 ---
 
-## 3. Analysis of Approach 1 (VSM / TF-IDF)
+## TF-IDF Results
 
-We analyzed the search performance based on **Search Time (T)**, **Match Score (S)**, and **Phrase Length (L)**.
+### Key Findings
 
-### Performance Metrics
-*   **Popular Phrases:** Score is inversely proportional to phrase length.
-*   **Rare Phrases:** Generally lower scores; search time is highly dependent on phrase length.
-*   **Average Query Time:** 0.20s - 0.25s.
+- **Popular Phrases:** Score is inversely proportional to phrase length
+- **Rare Phrases:** Generally lower scores; search time depends heavily on phrase length  
+- **Average Query Time:** 0.20s - 0.25s
 
-### Impact of IDF (Inverse Document Frequency)
-We compared search results with and without IDF weighting.
-*   **Observation:** For short queries, the difference is negligible. However, as the query length increases, the results diverge significantly, proving IDF's necessity for complex queries.
+### Impact of IDF Weighting
 
-## 4. Approach 2: Latent Semantic Indexing (SVD)
+Comparison of search results with and without IDF:
+- For short queries, the difference is negligible
+- As query length increases, results diverge significantly, demonstrating IDF's necessity for complex queries
 
-This approach utilized **Singular Value Decomposition (SVD)** to identify semantic relationships between terms.
+---
+
+## Approach 2: Latent Semantic Indexing (SVD)
+
+This approach uses Singular Value Decomposition (SVD) to identify semantic relationships between terms.
 
 ### Implementation Details
-*   **Algorithm:** Golub-Kahan-Lanczos algorithm for sparse matrices.
-*   **Optimization:** Re-orthogonalization was added to improve numerical stability (Bidiagonalization).
-*   **Language:** Rust (Custom implementation, as no mature sparse SVD library exists in the crate ecosystem).
 
-### Results & Challenges
-*   **Computation Time:** Calculating SVD for Rank $k=350$ with 1000 iterations took approximately **3 days**.
-*   **Accuracy Issues:** The results for $k=350$ showed significant noise (see image below), likely due to approximation errors in the custom Lanczos implementation or numerical precision limits.
-*   **Optimization:** To keep search times reasonable, we limited the rank to $k \ge 100$.
+- **Algorithm:** Golub-Kahan-Lanczos algorithm for sparse matrices
+- **Optimization:** Re-orthogonalization added for numerical stability (Bidiagonalization)
+- **Language:** Custom Rust implementation (no mature sparse SVD library in crate ecosystem)
+
+### Results and Challenges
+
+- **Computation Time:** SVD calculation for rank k=350 with 1000 iterations took approximately 3 days
+- **Accuracy Issues:** Results for k=350 showed significant noise, likely due to approximation errors or numerical precision limits
+- **Optimization:** Limited rank to k ≥ 100 to keep search times reasonable
+
 ---
 
-## 5. Frontend & API
+## Frontend & API
 
-*   **API:** Implemented using **actix-web** (Rust).
-*   **Frontend:** Built with **React** and **Vite**.
+- **API:** Implemented using Actix-web (Rust)
+- **Frontend:** Built with React and Vite
+
 ---
 
-## 6. Conclusion
+## Conclusion
 
-The **Vector Space Model (TF-IDF)** provided the best balance of performance and accuracy for this specific dataset, with query times under 250ms. The **SVD** approach, while theoretically powerful for capturing semantic meaning, proved difficult to implement efficiently in Rust without external linear algebra bindings (like LAPACK), leading to high computational costs and stability issues.
+The **Vector Space Model (TF-IDF)** provided the best balance of performance and accuracy, with query times under 250ms.
+
+The **SVD** approach, while theoretically powerful for capturing semantic relationships, proved difficult to implement efficiently in Rust without external linear algebra bindings (LAPACK), resulting in high computational costs and stability issues.
